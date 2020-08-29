@@ -110,3 +110,32 @@ exports.accountActivation = (req, res) => {
     return res.status(401).json({ error: "Something wrong, try again" });
   }
 };
+
+exports.signIn = (req, res) => {
+  console.log(req.body);
+
+  const { email, password } = req.body;
+
+  const user = User.findOne({ email: email }).exec((err, user) => {
+    if (err || !user) {
+      return res.status(400).json({ error: "Validation error" });
+    }
+
+    // const authentication = User.authenticate(password);
+
+    if (!user.authenticate(password)) {
+      return res.status(401).json({ error: "Validation error" });
+    }
+
+    const token = jwt.sign(
+      { name: user.name, id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    const { _id, name, email, role } = user;
+    return res
+      .status(200)
+      .json({ token: token, user: { _id, name, email, role } });
+  });
+};
